@@ -79,7 +79,44 @@ tab.get_frame()
 # 只需要获取最高级的容器元素，静态转换一次，
 tab('t:body').s_eles('t:a')
 # 静态文本，用lxml解析一下，之后就可以用xpath提取元素；
-# 2.DataRecorder,存储数据库
+
+# 2.多线程，threading，pool;
+
+# 3.DataRecorder,存储数据库
+from DataRecorder import Recorder,DBRecorder
+r = Recorder('data.csv')
+r.add_data('data')
+r.record()
+# DBRecorder是用来处理sql类型数据库，mongodb不能处理
+d = DBRecorder(path='data.db', cache_size=500, table='table1')
+# mongodb用这个类
+from pymongo import MongoClient
+
+class MongoDBRecorder:
+    def __init__(self, uri, db_name, collection_name, cache_size=100):
+        self.client = MongoClient(uri)
+        self.db = self.client[db_name]
+        self.collection = self.db[collection_name]
+        self.cache_size = cache_size
+        self.buffer = []  # 用于缓存数据
+
+    def add_data(self, data):
+        self.buffer.append(data)  # 将数据添加到缓存
+        if len(self.buffer) >= self.cache_size:
+            self.flush()  # 如果缓存满了，写入数据库
+
+    def flush(self):
+        if self.buffer:
+            self.collection.insert_many(self.buffer)  # 一次性插入缓存的数据
+            print(f'写入数据库的记录数: {len(self.buffer)}')
+            self.buffer.clear()  # 清空缓存
+
+    def close(self):
+        self.flush()  # 关闭之前先写入剩余数据
+        self.client.close()  # 关闭数据库连接
+
+d = MongoDBRecorder(uri='mongodb://localhost:27017/', db_name='drissionpage', collection_name='table1', cache_size=100)  # 可以设置缓存大小
+
 
 # 3.DownloadKit
 # 多线程并发下载多个文件
