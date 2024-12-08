@@ -171,58 +171,70 @@
 # if __name__ == '__main__':
 #     main()
 
+#
+# from DrissionPage import SessionPage
+# from DrissionPage import Chromium
+# from pymongo import MongoClient
+#
+# class MongoDBRecorder:
+#     def __init__(self, uri, db_name, collection_name, cache_size=100):
+#         self.client = MongoClient(uri)
+#         self.db = self.client[db_name]
+#         self.collection = self.db[collection_name]
+#         self.cache_size = cache_size
+#         self.buffer = []  # 用于缓存数据
+#
+#     def add_data(self, data):
+#         self.buffer.append(data)  # 将数据添加到缓存
+#         if len(self.buffer) >= self.cache_size:
+#             self.flush()  # 如果缓存满了，写入数据库
+#
+#     def flush(self):
+#         if self.buffer:
+#             self.collection.insert_many(self.buffer)  # 一次性插入缓存的数据
+#             print(f'写入数据库的记录数: {len(self.buffer)}')
+#             self.buffer.clear()  # 清空缓存
+#
+#     def close(self):
+#         self.flush()  # 关闭之前先写入剩余数据
+#         self.client.close()  # 关闭数据库连接
+#
+# def get_list(page, dbrecorder):
+#     """获取一页信息并添加到记录器"""
+#     # tab = Chromium().latest_tab
+#     p = SessionPage()
+#     url = f'https://gitee.com/explore/all?page={page}'
+#     p.get(url)  # 访问页面
+#     rows = p('.ui relaxed divided items explore-repo__list').eles('.item')
+#     for row in rows:  # 遍历所有行
+#         data = {  # 产生一行数据
+#             'page': page,
+#             'title': row('.title project-namespace-path').text,
+#             'content': row('.project-desc mb-1').text,
+#             'stars': row('.stars-count').text
+#         }
+#         dbrecorder.add_data(data)  # 把一条数据放入记录器
+#         print(data)
+#
+# def main():
+#     # 创建 MongoDBRecorder 实例并传入参数
+#     d = MongoDBRecorder(uri='mongodb://localhost:27017/', db_name='drissionpage', collection_name='集合1', cache_size=50)  # 可以设置缓存大小
+#     for i in range(1, 5):  # 遍历1页
+#         get_list(i, d)
+#     d.close()  # 关闭数据库连接
+#
+# if __name__ == '__main__':
+#     main()
 
-from DrissionPage import SessionPage
+
 from DrissionPage import Chromium
-from pymongo import MongoClient
 
-class MongoDBRecorder:
-    def __init__(self, uri, db_name, collection_name, cache_size=100):
-        self.client = MongoClient(uri)
-        self.db = self.client[db_name]
-        self.collection = self.db[collection_name]
-        self.cache_size = cache_size
-        self.buffer = []  # 用于缓存数据
+tab = Chromium().latest_tab
+tab.listen.start('gitee.com/explore')  # 开始监听，指定获取包含该文本的数据包
+tab.get('https://gitee.com/explore/all')  # 访问网址，这行产生的数据包不监听
 
-    def add_data(self, data):
-        self.buffer.append(data)  # 将数据添加到缓存
-        if len(self.buffer) >= self.cache_size:
-            self.flush()  # 如果缓存满了，写入数据库
+for _ in range(5):
+    res = tab.listen.wait()  # 等待并获取一个数据包
+    tab('@rel=next').click()  # 点击下一页
 
-    def flush(self):
-        if self.buffer:
-            self.collection.insert_many(self.buffer)  # 一次性插入缓存的数据
-            print(f'写入数据库的记录数: {len(self.buffer)}')
-            self.buffer.clear()  # 清空缓存
-
-    def close(self):
-        self.flush()  # 关闭之前先写入剩余数据
-        self.client.close()  # 关闭数据库连接
-
-def get_list(page, dbrecorder):
-    """获取一页信息并添加到记录器"""
-    # tab = Chromium().latest_tab
-    p = SessionPage()
-    url = f'https://gitee.com/explore/all?page={page}'
-    p.get(url)  # 访问页面
-    rows = p('.ui relaxed divided items explore-repo__list').eles('.item')
-    for row in rows:  # 遍历所有行
-        data = {  # 产生一行数据
-            'page': page,
-            'title': row('.title project-namespace-path').text,
-            'content': row('.project-desc mb-1').text,
-            'stars': row('.stars-count').text
-        }
-        dbrecorder.add_data(data)  # 把一条数据放入记录器
-        print(data)
-
-def main():
-    # 创建 MongoDBRecorder 实例并传入参数
-    d = MongoDBRecorder(uri='mongodb://localhost:27017/', db_name='drissionpage', collection_name='集合1', cache_size=50)  # 可以设置缓存大小
-    for i in range(1, 5):  # 遍历1页
-        get_list(i, d)
-    d.close()  # 关闭数据库连接
-
-if __name__ == '__main__':
-    main()
-
+    print(res.url)  # 打印数据包url

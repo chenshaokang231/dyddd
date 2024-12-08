@@ -1,7 +1,11 @@
-from DrissionPage.common import configs_to_here,Settings
+from DrissionPage.common import configs_to_here, Settings
 from DrissionPage import Chromium, ChromiumOptions
 from DataRecorder import Recorder, DBRecorder
 from DownloadKit import DownloadKit
+from TimePinner import Pinner
+
+# 计时器
+pinner = Pinner()
 # 全局设置
 Settings.raise_when_ele_not_found = True
 Settings.auto_handle_alert = True
@@ -64,13 +68,13 @@ tab.scroll.to_see()
 # wait主动等待
 tab.wait.eles_loaded()
 
-# 6.***监听接口***，
+# 6.***监听接口***
 tab.listen.start("")
 tab.listen.wait()
 # 监听listen，有DataPacket对象；DataPacket对象有response对象，返回html静态文本；
 DataPacket = tab.listen.wait()
-
-
+DataPacket.request
+DataPacket.response
 # 1.获取元素是自动化的重中之重
 # tab对象和元素对象，都可以查找元素对象，有链式写法
 # 所有涉及获取元素的操作都可以使用定位语法，如ele()、actions.move_to()、wait.eles_loaded()、get_frame()等等。
@@ -79,7 +83,8 @@ DataPacket = tab.listen.wait()
 tab('x://div').eles('x:/a')
 # 特殊情况，iframe，frame，同域名，异域名
 tab.get_frame()
-# 静态方式查找，s_eles()把整个页面或动态元素转变成一个静态元素，再在其中获取下级元素或信息
+# ***静态方式查找***
+# s_eles()把整个页面或动态元素转变成一个静态元素，再在其中获取下级元素或信息
 # 只需要获取最高级的容器元素，静态转换一次，
 tab('t:body').s_eles('t:a')
 # 静态文本，用lxml解析一下，之后就可以用xpath提取元素；
@@ -97,7 +102,7 @@ tab.change_mode()
 # 6.SessionPage，是对 requests 和 lxml 进行封装实现的，是请求接口，收发数据包
 # 传递控制权，
 
-# 2.多线程，threading，pool;
+# 2.多线程，threading;
 # 用线程threading模块或者线程池concurrent.futures.Executor，多线程
 
 # 3.异步携程并发
@@ -109,6 +114,7 @@ r.add_data('data')
 r.record()
 # DBRecorder是用来处理sql类型数据库，mongodb不能处理
 d = DBRecorder(path='data.db', cache_size=500, table='table1')
+
 # mongodb用这个类
 from pymongo import MongoClient
 
@@ -152,3 +158,5 @@ print(mission.rate)  # 打印下载进度（百分比）
 print(mission.state)  # 打印任务状态
 print(mission.info)  # 打印任务信息
 print(mission.result)  # 打印任务结果
+
+# 使用docker部署
