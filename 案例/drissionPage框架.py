@@ -1,5 +1,13 @@
+from DrissionPage.common import configs_to_here,Settings
 from DrissionPage import Chromium, ChromiumOptions
-
+from DataRecorder import Recorder, DBRecorder
+from DownloadKit import DownloadKit
+# 全局设置
+Settings.raise_when_ele_not_found = True
+Settings.auto_handle_alert = True
+# 1.配置ini 文件，dp_configs.ini
+configs_to_here()
+co = ChromiumOptions(ini_path=r'dp_configs.ini')
 # 1.co配置，可以链式操作
 # 2.使用系统浏览器用户目录，以便复用用户信息和插件
 # co = ChromiumOptions().use_system_user_path()
@@ -17,9 +25,7 @@ co = ChromiumOptions().auto_port()
 # co = ChromiumOptions(ini_path=r'./config1.ini')
 browser = Chromium(co)
 tab = browser.latest_tab
-# 3.全局设置
-tab.set.auto_handle_alert()
-tab.set.blocked_urls('*.css*')
+
 # 3.多标签页协作
 browser.new_tab()
 # link.click.for_new_tab()
@@ -31,25 +37,16 @@ browser.get_tab(1)
 # 比如一个执行主逻辑流程，另外的监视页面，处理各种弹窗。
 # 5.点击、拖拽和悬停，动作链操作验证码，第三方识别库
 # ddddocr,cv2模型库
-# 5.切换模式，收发数据包
-# 切换模式是用来应付登录检查很严格的网站，
-# 可以用浏览器处理登录，再转换模式用收发数据包的形式来采集数据
-# d 模式用于控制浏览器，s 模式使用requests收发数据包
-tab.change_mode()
-# 6.cookies管理，SessionPage
-# SessionPage,保持对话状态，保持cookies信息，可以从tab对象中提取session
 
 # 6.加载策略
 tab.set.load_mode.normal()
 tab.set.load_mode.eager()
 tab.set.load_mode.none()
-# none模式技巧，跟监听器配合，跟页面特征配合，可在获取到需要的数据包时，主动停止加载。stop_loading()
+# none模式技巧，跟监听器配合，也可以跟页面特征配合，
+# 可在获取到需要的数据包时，主动停止加载。stop_loading()
 # 8.页面交互：点击元素，输入内容，监听接口，执行js脚本，监听控制台，列表选择,页面滚动，wait等待
-# 6.监听接口，
-tab.listen.start("")
-tab.listen.wait()
-# 监听listen，有DataPacket对象；DataPacket对象有response对象，返回html静态文本；
-DataPacket = tab.listen.wait()
+# 设置不加载css文件
+tab.set.blocked_urls('*.css*')
 tab.run_js()
 # 等待页面加载完毕,再执行js
 tab.run_js_loaded()
@@ -61,12 +58,19 @@ tab.add_init_js()
 tab.run_cdp()
 # 获取控制台信息
 tab.console.start()
-
 # 触发XHR请求
 tab.scroll.to_bottom()
 tab.scroll.to_see()
 # wait主动等待
 tab.wait.eles_loaded()
+
+# 6.***监听接口***，
+tab.listen.start("")
+tab.listen.wait()
+# 监听listen，有DataPacket对象；DataPacket对象有response对象，返回html静态文本；
+DataPacket = tab.listen.wait()
+
+
 # 1.获取元素是自动化的重中之重
 # tab对象和元素对象，都可以查找元素对象，有链式写法
 # 所有涉及获取元素的操作都可以使用定位语法，如ele()、actions.move_to()、wait.eles_loaded()、get_frame()等等。
@@ -79,18 +83,35 @@ tab.get_frame()
 # 只需要获取最高级的容器元素，静态转换一次，
 tab('t:body').s_eles('t:a')
 # 静态文本，用lxml解析一下，之后就可以用xpath提取元素；
+# 4.这主要用于应付长期运行导致内存占用过高，断开连接可释放内存，然后重连继续控制浏览器
+tab.disconnect()
+tab.reconnect()
+
+# 5.切换模式，收发数据包
+# 切换模式是用来应付登录检查很严格的网站，
+# 可以用浏览器处理登录，再转换模式用收发数据包的形式来采集数据
+# d 模式用于控制浏览器，s 模式使用requests收发数据包
+tab.change_mode()
+# 实现了两者 api 的统一，cookies 的互通
+
+# 6.SessionPage，是对 requests 和 lxml 进行封装实现的，是请求接口，收发数据包
+# 传递控制权，
 
 # 2.多线程，threading，pool;
+# 用线程threading模块或者线程池concurrent.futures.Executor，多线程
+
+# 3.异步携程并发
 
 # 3.DataRecorder,存储数据库
-from DataRecorder import Recorder,DBRecorder
 r = Recorder('data.csv')
 r.add_data('data')
+# 强烈建议在程序结束时显式调用record()保存数据
 r.record()
 # DBRecorder是用来处理sql类型数据库，mongodb不能处理
 d = DBRecorder(path='data.db', cache_size=500, table='table1')
 # mongodb用这个类
 from pymongo import MongoClient
+
 
 class MongoDBRecorder:
     def __init__(self, uri, db_name, collection_name, cache_size=100):
@@ -115,14 +136,19 @@ class MongoDBRecorder:
         self.flush()  # 关闭之前先写入剩余数据
         self.client.close()  # 关闭数据库连接
 
-d = MongoDBRecorder(uri='mongodb://localhost:27017/', db_name='drissionpage', collection_name='table1', cache_size=100)  # 可以设置缓存大小
 
+d = MongoDBRecorder(uri='mongodb://localhost:27017/', db_name='drissionpage', collection_name='table1',
+                    cache_size=100)  # 可以设置缓存大小
 
-# 3.DownloadKit
-# 多线程并发下载多个文件
-
-# 4.这主要用于应付长期运行导致内存占用过高，断开连接可释放内存，然后重连继续控制浏览器
-tab.disconnect()
-tab.reconnect()
-
-
+# 3.DownloadKit，下载文件，是基于requests库，看看有没有更好用的库；
+# 多线程并发下载文件
+d = DownloadKit()
+# DownloadKit对象，获取失败的任务
+d.get_failed_missions()
+# add()方法会返回一个Mission对象，该任务对象可用于，查看任务信息和管理任务。
+mission = d.add('https://dldir1.qq.com/qqfile/qq/TIM3.4.8/TIM3.4.8.22086.exe')
+print(mission.id)  # 获取任务id
+print(mission.rate)  # 打印下载进度（百分比）
+print(mission.state)  # 打印任务状态
+print(mission.info)  # 打印任务信息
+print(mission.result)  # 打印任务结果

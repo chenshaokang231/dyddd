@@ -173,6 +173,7 @@
 
 
 from DrissionPage import SessionPage
+from DrissionPage import Chromium
 from pymongo import MongoClient
 
 class MongoDBRecorder:
@@ -200,15 +201,16 @@ class MongoDBRecorder:
 
 def get_list(page, dbrecorder):
     """获取一页信息并添加到记录器"""
-    p = SessionPage()  # 创建页面对象
+    # tab = Chromium().latest_tab
+    p = SessionPage()
     url = f'https://gitee.com/explore/all?page={page}'
     p.get(url)  # 访问页面
     rows = p('.ui relaxed divided items explore-repo__list').eles('.item')
     for row in rows:  # 遍历所有行
         data = {  # 产生一行数据
             'page': page,
-            'title': row('.title.project-namespace-path').text,
-            'content': row('.project-desc.mb-1').text,
+            'title': row('.title project-namespace-path').text,
+            'content': row('.project-desc mb-1').text,
             'stars': row('.stars-count').text
         }
         dbrecorder.add_data(data)  # 把一条数据放入记录器
@@ -216,8 +218,8 @@ def get_list(page, dbrecorder):
 
 def main():
     # 创建 MongoDBRecorder 实例并传入参数
-    d = MongoDBRecorder(uri='mongodb://localhost:27017/', db_name='drissionpage', collection_name='集合1', cache_size=5)  # 可以设置缓存大小
-    for i in range(1, 2):  # 遍历1页
+    d = MongoDBRecorder(uri='mongodb://localhost:27017/', db_name='drissionpage', collection_name='集合1', cache_size=50)  # 可以设置缓存大小
+    for i in range(1, 5):  # 遍历1页
         get_list(i, d)
     d.close()  # 关闭数据库连接
 
