@@ -227,14 +227,78 @@
 #     main()
 
 
+# from DrissionPage import Chromium
+#
+# tab = Chromium().latest_tab
+# tab.listen.start('gitee.com/explore')  # 开始监听，指定获取包含该文本的数据包
+# tab.get('https://gitee.com/explore/all')  # 访问网址，这行产生的数据包不监听
+#
+# for _ in range(5):
+#     res = tab.listen.wait()  # 等待并获取一个数据包
+#     tab('@rel=next').click()  # 点击下一页
+#
+#     print(res.url)  # 打印数据包url
+
+
+# import asyncio
+# from DrissionPage import Chromium
+# from DataRecorder import Recorder
+#
+#
+# async def collect_data(tab, recorder, title, num=1):
+#     # 遍历所有标题元素并记录到记录器
+#     for i in tab.eles('.title project-namespace-path'):
+#         print(title, i.text, title, num)
+#         # recorder.add_data((title, i.text, title, num))
+#
+#     # 查找下一页按钮（海象操作符）赋值即使用
+#     if btn := tab('@rel=next', timeout=2):
+#         # 如果有下一页，点击翻页
+#         btn.click(by_js=True)
+#         await asyncio.sleep(0.2)
+#         await collect_data(tab, recorder, title, num + 1)
+#
+#
+# async def main():
+#     # 新建页面对象
+#     browser = Chromium()
+#
+#     # 获取第一个标签页对象
+#     tab1 = browser.latest_tab
+#     tab1.get('https://gitee.com/explore/ai')
+#     # 新建一个标签页并访问另一个网址
+#     tab2 = browser.new_tab('https://gitee.com/explore/machine-learning')
+#     # 新建记录器对象
+#     recorder = Recorder('data.csv')
+#
+#     task1 = asyncio.create_task(collect_data(tab1, recorder, 'ai'))
+#     task2 = asyncio.create_task(collect_data(tab2, recorder, '机器学习'))
+#
+#     await task1
+#     await task2
+#
+#
+# if __name__ == '__main__':
+#     asyncio.run(main())
+
+
 from DrissionPage import Chromium
 
+# 创建页面对象
 tab = Chromium().latest_tab
-tab.listen.start('gitee.com/explore')  # 开始监听，指定获取包含该文本的数据包
-tab.get('https://gitee.com/explore/all')  # 访问网址，这行产生的数据包不监听
+# 访问目标网页
+tab.get('https://book.douban.com/tag/小说?start=0&type=T')
 
-for _ in range(5):
-    res = tab.listen.wait()  # 等待并获取一个数据包
-    tab('@rel=next').click()  # 点击下一页
+# 爬取4页
+for _ in range(2):
+    # 遍历一页中所有图书
+    for book in tab.eles('.subject-item'):
+        # 获取封面图片对象
+        img = book('t:img')
+        print(img)
+        # 保存图片
+        img.save(r'/Users/hahaha/js2py/DrissionPage/案例/图片')
 
-    print(res.url)  # 打印数据包url
+    # 点击下一页
+    tab('后页>').click()
+    tab.wait.load_start()

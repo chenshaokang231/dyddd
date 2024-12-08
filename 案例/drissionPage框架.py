@@ -75,7 +75,23 @@ tab.listen.wait()
 DataPacket = tab.listen.wait()
 DataPacket.request
 DataPacket.response
+
+
 # 1.获取元素是自动化的重中之重
+# 元素提取的逻辑，写在单独的函数中
+async def collect_data(tab, recorder, title, num=1):
+    # 遍历所有标题元素并记录到记录器
+    for i in tab.eles('.title project-namespace-path'):
+        recorder.add_data((title, i.text, title, num))
+
+    # 查找下一页按钮（海象操作符）
+    if btn := tab('@rel=next', timeout=2):
+        # 如果有下一页，点击翻页
+        btn.click(by_js=True)
+        await asyncio.sleep(0.2)
+        await collect_data(tab, recorder, title, num + 1)
+
+
 # tab对象和元素对象，都可以查找元素对象，有链式写法
 # 所有涉及获取元素的操作都可以使用定位语法，如ele()、actions.move_to()、wait.eles_loaded()、get_frame()等等。
 # 获取父级元素，然后在它里面查找子元素
@@ -92,6 +108,14 @@ tab('t:body').s_eles('t:a')
 tab.disconnect()
 tab.reconnect()
 
+# 元素对象的save方法，先找到图片标签<img>
+# 在浏览器中直接保存图片，直接读取缓存里面的图片保存
+for book in tab.eles('.subject-item'):
+        # 获取封面图片对象
+        img = book('t:img')
+        # 保存图片路径
+        img.save(r'/Users/hahaha/js2py/DrissionPage/案例')
+
 # 5.切换模式，收发数据包
 # 切换模式是用来应付登录检查很严格的网站，
 # 可以用浏览器处理登录，再转换模式用收发数据包的形式来采集数据
@@ -102,10 +126,30 @@ tab.change_mode()
 # 6.SessionPage，是对 requests 和 lxml 进行封装实现的，是请求接口，收发数据包
 # 传递控制权，
 
-# 2.多线程，threading;
-# 用线程threading模块或者线程池concurrent.futures.Executor，多线程
+# 3.异步携程并发asyncio，有网络请求，http、ws的io操作时；
+# 如果是操作两个tab页面，用asyncio.create_task(task)来添加两个task任务，异步执行；
+import asyncio
+async def main():
+    # 新建页面对象
+    browser = Chromium()
+    # 获取第一个标签页对象
+    tab1 = browser.latest_tab
+    tab1.get('https://gitee.com/explore/ai')
+    # 新建一个标签页并访问另一个网址
+    tab2 = browser.new_tab('https://gitee.com/explore/machine-learning')
+    # 新建记录器对象
+    recorder = Recorder('data.csv')
 
-# 3.异步携程并发
+    task1 = asyncio.create_task(collect_data(tab1, recorder, 'ai'))
+    task2 = asyncio.create_task(collect_data(tab2, recorder, '机器学习'))
+
+    await task1
+    await task2
+if __name__ == '__main__':
+    asyncio.run(main())
+
+# 2.多线程，threading
+
 
 # 3.DataRecorder,存储数据库
 r = Recorder('data.csv')

@@ -2,11 +2,11 @@
 id: async
 title: '🥪 异步递归操作多标签页'
 
-asyncio,模块专注于套接字连接的并发非阻塞 IO。
-例如，如果你的 IO 任务是基于文件I/O, 数据库I/O的，那么 asyncio 可能不是最合适的选择，至少仅因为这一点。
-原因是协程比线程更轻量级，因此一个线程可以托管比进程可以管理的线程多得多的协程。
-例如，asyncio 可能允许成千上万，甚至更多的协程用于基于套接字的 IO，而 threading API 可能只有几百到低数千个线程。
-原文链接：https://blog.csdn.net/captain5339/article/details/141404072
+#asyncio,模块专注于套接字连接的并发非阻塞 IO。
+#例如，如果你的 IO 任务是基于文件I/O, 数据库I/O的，那么 asyncio 可能不是最合适的选择，至少仅因为这一点。
+#原因是协程比线程更轻量级，因此一个线程可以托管比进程可以管理的线程多得多的协程。
+#例如，asyncio 可能允许成千上万，甚至更多的协程用于基于套接字的 IO，而 threading API 可能只有几百到低数千个线程。
+#原文链接：https://blog.csdn.net/captain5339/article/details/141404072
 ---
 
 <div class="wwads-cn wwads-horizontal" data-id="317"></div><br/>
@@ -57,8 +57,7 @@ async def collect_data(tab, recorder, title, num=1):
         await asyncio.sleep(0.2)
         await collect_data(tab, recorder, title, num + 1)
 
-
-
+        
 async def main():
     # 新建页面对象
     browser = Chromium()
